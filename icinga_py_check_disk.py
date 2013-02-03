@@ -4,18 +4,20 @@
 #
 # Author(s):     Ryan Irujo
 # Inception:     01.30.2013
-# Last Modified: 01.30.2013
+# Last Modified: 02.02.2013
 #
 # Description:   Script that calls on the 'check_disk' Nagios Plugin and returns back the current
 #                Disk Space of a particular partition on a host.
 #
 #
-# Changes:
+# Changes:       02.02.2013 - [R. Irujo]
+#                Added check for Disk_Critical Variable to verify that it is a number.
 #
 #
 # Command Line:  ./icinga_py_check_disk "[Critcal_Percent]" "[Disk_Path]"
-# NRPE Examples: ./check_nrpe -H srv101.fabrikam.com -c icinga_py_check_disk -a "5%" "/var/log"
+# NRPE Examples: ./check_nrpe -H srv101.fabrikam.com -c icinga_py_check_disk -a "5" "/var/log"
 
+import numbers
 import re
 import sys
 import subprocess
@@ -30,24 +32,20 @@ Hostname     = Hostname.rstrip()
 #Verifying that Parameters passed to the script have values.
 try:
 
-        Disk_Critical     = sys.argv[1]
+        Disk_Critical     = int(sys.argv[1])
         Disk_Path         = sys.argv[2]
 
-        if Disk_Critical == None:
-                print "Disk_Critical Variable is empty"
-                exit(2)
 
-        if Disk_Path == None:
-                print "Disk_Path Variable is empty"
-                exit(2)
-
+except ValueError:
+        print "The [Disk_Critical] Variable must be a number!"
+        exit(3)
 except IndexError:
         print "Both the [Disk_Critical] and [Disk_Path] Variables are required!"
         exit(3)
 
 
 # Formatting Command to return back Disk Statistics.
-CheckDiskCmd = "/usr/lib64/nagios/plugins/check_disk -c {0} -p {1}".format(Disk_Critical,Disk_Path)
+CheckDiskCmd = "/usr/lib64/nagios/plugins/check_disk -c {0}% -p {1}".format(Disk_Critical,Disk_Path)
 
 # Disk Space Check
 Disk_Check   = subprocess.Popen(CheckDiskCmd, stdout=subprocess.PIPE, shell=True)
